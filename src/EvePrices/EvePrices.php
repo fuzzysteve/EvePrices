@@ -36,9 +36,6 @@ class EvePrices
         } else {
             $this->region=10000002;
         }
-        if ($this->region==10000002) {
-            $this->region='forge';
-        }
     }
 
     public function setRegion($regionid)
@@ -47,9 +44,6 @@ class EvePrices
             $this->region=$regionid;
         } else {
             throw new \Exception("regionid must be a number");
-        }
-        if ($this->region==10000002) {
-            $this->region='forge';
         }
     }
 
