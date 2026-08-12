@@ -19,9 +19,6 @@ class EvePrices
             case 'populatedmemcached':
                 $this->priceSource=new \EvePrices\Sources\Memcached($args['host'], $args['port']);
                 break;
-            case 'marketdata':
-                $this->priceSource=new \EvePrices\Sources\MarketData($args['userid']);
-                break;
             default:
                 throw new \Exception("EvePrices doesn't understand source type ".$args['source']);
         }

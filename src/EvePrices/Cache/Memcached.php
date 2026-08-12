@@ -36,7 +36,7 @@ class Memcached implements \EvePrices\CacheInterface
                 $toget[]=$typeid;
                 continue;
             }
-            if (!(is_numeric(pricedatabuy))) {
+            if (!(is_numeric($pricedatabuy))) {
                 $toget[]=$typeid;
                 continue;
             }
