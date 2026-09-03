@@ -11,20 +11,23 @@ class Redis
         $this->redis = new \Predis\Client(array('scheme' => $scheme,'host'   => $host,'port'   => $port));
     }
 
-    public function returnPrice($typeid, $regionid)
+    private function extractPrice($rawvalue)
     {
-        $pricedatasell=$this->redis->get($regionid.'sell-'.$typeid);
-        $pricedatabuy=$this->redis->get($regionid.'buy-'.$typeid);
-        $values=explode("|", $pricedatasell);
-        $price=$values[0];
+        // New aggregate format: weightedaverage|maxval|minval|stddev|median|volume|numorders|fivepercent
+        $values=explode("|", $rawvalue);
+        $price=isset($values[7]) ? $values[7] : null;
         if (!(is_numeric($price))) {
             $price=0;
         }
-        $values=explode("|", $pricedatabuy);
-        $pricebuy=$values[0];
-        if (!(is_numeric($pricebuy))) {
-            $pricebuy=0;
-        }
+        return $price;
+    }
+
+    public function returnPrice($typeid, $regionid)
+    {
+        $pricedatasell=$this->redis->get($regionid.'|'.$typeid.'|false');
+        $pricedatabuy=$this->redis->get($regionid.'|'.$typeid.'|true');
+        $price=$this->extractPrice($pricedatasell);
+        $pricebuy=$this->extractPrice($pricedatabuy);
         $eveprices=$this->redis->get('eveprice-'.$typeid);
         $values=explode("|", $eveprices);
         $average=$values[0];
@@ -43,28 +46,12 @@ class Redis
     {
         $priceArray=array();
         foreach ($typeids as $typeid) {
-            $pricedatasell=$this->redis->get($regionid.'sell-'.$typeid);
-            $pricedatabuy=$this->redis->get($regionid.'buy-'.$typeid);
-            $values=explode("|", $pricedatasell);
-            if (isset($values)) {
-                $price=$values[0];
-                if (!(is_numeric($price))) {
-                    $price=0;
-                }
-            } else {
-                $price=0;
-            }
-            $values=explode("|", $pricedatabuy);
-            if (isset($values)) {
-                $pricebuy=$values[0];
-                if (!(is_numeric($pricebuy))) {
-                    $pricebuy=0;
-                }
-            } else {
-                $pricebuy=0;
-            }
+            $pricedatasell=$this->redis->get($regionid.'|'.$typeid.'|false');
+            $pricedatabuy=$this->redis->get($regionid.'|'.$typeid.'|true');
+            $price=$this->extractPrice($pricedatasell);
+            $pricebuy=$this->extractPrice($pricedatabuy);
             $eveprices=$this->redis->get('eveprice-'.$typeid);
-            if (isset($values)) {
+            if (isset($eveprices)) {
                 $values=explode("|", $eveprices);
                 $average=$values[0];
                 $adjusted=$values[1];
@@ -82,24 +69,16 @@ class Redis
         }
         return $priceArray;
     }
-    
+
     public function populateArray($inputarray, $regionid)
     {
         $populatedArray=array();
         foreach ($inputarray as $entry) {
             $typeid=$entry['typeid'];
-            $pricedatasell=$this->redis->get($regionid.'sell-'.$typeid);
-            $pricedatabuy=$this->redis->get($regionid.'buy-'.$typeid);
-            $values=explode("|", $pricedatasell);
-            $price=$values[0];
-            if (!(is_numeric($price))) {
-                $price=0;
-            }
-            $values=explode("|", $pricedatabuy);
-            $pricebuy=$values[0];
-            if (!(is_numeric($pricebuy))) {
-                $pricebuy=0;
-            }
+            $pricedatasell=$this->redis->get($regionid.'|'.$typeid.'|false');
+            $pricedatabuy=$this->redis->get($regionid.'|'.$typeid.'|true');
+            $price=$this->extractPrice($pricedatasell);
+            $pricebuy=$this->extractPrice($pricedatabuy);
             $eveprices=$this->redis->get('eveprice-'.$typeid);
             $values=explode("|", $eveprices);
             $average=$values[0];
